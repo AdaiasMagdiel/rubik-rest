@@ -1,0 +1,103 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "06600ce3f3fe200b9ade7779b23757b2",
+    "packages": [
+        {
+            "name": "adaiasmagdiel/erlenmeyer",
+            "version": "v4.1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AdaiasMagdiel/erlenmeyer.git",
+                "reference": "eb5914c7afdbf40ac340f85055f5d40eb1406de1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AdaiasMagdiel/erlenmeyer/zipball/eb5914c7afdbf40ac340f85055f5d40eb1406de1",
+                "reference": "eb5914c7afdbf40ac340f85055f5d40eb1406de1",
+                "shasum": ""
+            },
+            "require-dev": {
+                "pestphp/pest": "^3.8"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AdaiasMagdiel\\Erlenmeyer\\": "app/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Adaías Magdiel",
+                    "email": "adaiasmagdiell@gmail.com"
+                }
+            ],
+            "description": "Erlenmeyer is a lightweight PHP framework designed to create web applications simply and efficiently.",
+            "support": {
+                "issues": "https://github.com/AdaiasMagdiel/erlenmeyer/issues",
+                "source": "https://github.com/AdaiasMagdiel/erlenmeyer/tree/v4.1.2"
+            },
+            "time": "2025-12-09T15:24:12+00:00"
+        },
+        {
+            "name": "adaiasmagdiel/rubik",
+            "version": "v5.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AdaiasMagdiel/rubik-orm.git",
+                "reference": "a8d414d5c82a1523d3ebf24bb59131a191ec1091"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AdaiasMagdiel/rubik-orm/zipball/a8d414d5c82a1523d3ebf24bb59131a191ec1091",
+                "reference": "a8d414d5c82a1523d3ebf24bb59131a191ec1091",
+                "shasum": ""
+            },
+            "require": {
+                "ext-pdo": "*",
+                "php": ">=8.1"
+            },
+            "require-dev": {
+                "pestphp/pest": "^3.7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "AdaiasMagdiel\\Rubik\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Adaías Magdiel",
+                    "email": "adaiasmagdiell@gmail.com"
+                }
+            ],
+            "description": "A lightweight and intuitive ORM for PHP with support for SQLite and MySQL/MariaDB.",
+            "support": {
+                "issues": "https://github.com/AdaiasMagdiel/rubik-orm/issues",
+                "source": "https://github.com/AdaiasMagdiel/rubik-orm/tree/v5.2.0"
+            },
+            "time": "2025-12-10T16:52:51+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
+}

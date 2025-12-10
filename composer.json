@@ -1,0 +1,26 @@
+{
+  "name": "adaiasmagdiel/rubik-rest",
+  "description": "Rest interface for Rubik ORM for integrations with Erlenmeyer",
+  "type": "library",
+  "version": "1.0.0",
+  "require": {
+    "adaiasmagdiel/rubik": "^5.1",
+    "adaiasmagdiel/erlenmeyer": "4.1.2"
+  },
+  "license": "gpl-3.0-only",
+  "autoload": {
+    "psr-4": {
+      "AdaiasMagdiel\\RubikREST\\": "app/"
+    },
+    "files": [
+      "app/helpers.php"
+    ]
+  },
+  "authors": [
+    {
+      "name": "Adaías Magdiel",
+      "email": "adaiasmagdiell@gmail.com"
+    }
+  ],
+  "minimum-stability": "stable"
+}
