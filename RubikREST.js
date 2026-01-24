@@ -1,197 +1,252 @@
-class RubikREST {
+/**
+ * HTTP Client for the RubikREST API.
+ */
+class RubikClient {
+    /**
+     * @param {string} baseUrl The API base URL (e.g., "https://api.mysite.com/v1").
+     * @param {object} headers Global headers (e.g., { "Authorization": "Bearer ..." }).
+     */
     constructor(baseUrl, headers = {}) {
         this.baseUrl = baseUrl.replace(/\/+$/, "");
         this.headers = {
             "Content-Type": "application/json",
+            "Accept": "application/json",
             ...headers,
         };
     }
 
-    from(table) {
-        return new RubikRESTQuery(this.baseUrl, table, this.headers);
+    /**
+     * Starts an operation on a specific resource.
+     * @param {string} resource The resource slug (e.g., "users").
+     * @returns {RubikResource}
+     */
+    from(resource) {
+        return new RubikResource(this, resource);
     }
 }
 
-class RubikRESTQuery {
-    constructor(baseUrl, table, headers) {
-        this.baseUrl = baseUrl;
-        this.table = table;
-        this.headers = headers;
-
-        this._select = null;
-        this._filters = [];
-        this._order = [];
-        this._limit = null;
-        this._offset = null;
-        this._count = false;
-
-        this._body = null;
-        this._method = "GET";
+/**
+ * Represents an API resource and exposes CRUD methods.
+ */
+class RubikResource {
+    constructor(client, resourceName) {
+        this.client = client;
+        this.resourceName = resourceName;
+        this.endpoint = `${client.baseUrl}/${resourceName}`;
+        // Internal state for building queries (List only)
+        this._queryParams = new URLSearchParams();
     }
 
-    // ------------------------------------------------------------
-    // SELECT
-    // ------------------------------------------------------------
-    select(columns = "*") {
-        this._select = columns;
+    // =========================================================================
+    // CRUD ACTIONS (Immediate Execution)
+    // =========================================================================
+
+    /**
+     * Finds a single record by ID.
+     * GET /resource/{id}
+     * @param {string|number} id
+     */
+    async find(id) {
+        return this._request("GET", `${this.endpoint}/${id}`);
+    }
+
+    /**
+     * Creates a new record.
+     * POST /resource
+     * @param {object} data JSON object with data.
+     */
+    async create(data) {
+        return this._request("POST", this.endpoint, data);
+    }
+
+    /**
+     * Updates an existing record by ID.
+     * PATCH /resource/{id}
+     * @param {string|number} id
+     * @param {object} data JSON object with data to update.
+     */
+    async update(id, data) {
+        return this._request("PATCH", `${this.endpoint}/${id}`, data);
+    }
+
+    /**
+     * Deletes a record by ID.
+     * DELETE /resource/{id}
+     * @param {string|number} id
+     */
+    async delete(id) {
+        return this._request("DELETE", `${this.endpoint}/${id}`);
+    }
+
+    // =========================================================================
+    // QUERY BUILDER (For Listings - GET /resource)
+    // =========================================================================
+
+    /**
+     * Defines the columns to be returned.
+     * @param {string|string[]} columns E.g., "id,name" or ["id", "name"].
+     */
+    select(columns) {
+        const value = Array.isArray(columns) ? columns.join(",") : columns;
+        this._queryParams.set("select", value);
         return this;
     }
 
-    // ------------------------------------------------------------
-    // INSERT
-    // ------------------------------------------------------------
-    insert(values) {
-        this._method = "POST";
-        this._body = values;
+    /**
+     * Eager load relationships.
+     * @param {string|string[]} relations E.g., "posts" or ["posts", "profile"].
+     */
+    with(relations) {
+        const value = Array.isArray(relations) ? relations.join(",") : relations;
+        this._queryParams.set("with", value);
         return this;
     }
 
-    // ------------------------------------------------------------
-    // WHERE-FILTERS
-    // ------------------------------------------------------------
-    where(key, op, value) {
-        this._filters.push({ key, op, value });
+    /**
+     * Adds a WHERE filter.
+     * @param {string} column Column name.
+     * @param {string} operator Operator (eq, gt, like, etc).
+     * @param {string|number|boolean} value Value.
+     */
+    where(column, operator, value) {
+        // Maps to "column.operator=value" format expected by PHP Controller
+        this._queryParams.append(`${column}.${operator}`, value);
         return this;
     }
 
-    // .eq("id", 10)
-    eq(key, value) { return this.where(key, "eq", value); }
-    neq(key, value) { return this.where(key, "neq", value); }
-    gt(key, value) { return this.where(key, "gt", value); }
-    gte(key, value) { return this.where(key, "gte", value); }
-    lt(key, value) { return this.where(key, "lt", value); }
-    lte(key, value) { return this.where(key, "lte", value); }
+    // Filter shortcuts
+    eq(col, val) { return this.where(col, "eq", val); }
+    neq(col, val) { return this.where(col, "neq", val); }
+    gt(col, val) { return this.where(col, "gt", val); }
+    gte(col, val) { return this.where(col, "gte", val); }
+    lt(col, val) { return this.where(col, "lt", val); }
+    lte(col, val) { return this.where(col, "lte", val); }
+    like(col, val) { return this.where(col, "like", val); }
+    ilike(col, val) { return this.where(col, "ilike", val); }
+    is(col, val) { return this.where(col, "is", val); } // val: 'null', 'true', 'false'
 
-    like(key, value) { return this.where(key, "like", value); }
-    ilike(key, value) { return this.where(key, "ilike", value); }
+    /**
+     * IN filter.
+     * @param {string} col 
+     * @param {array} values 
+     */
+    in(col, values) {
+        return this.where(col, "in", Array.isArray(values) ? values.join(",") : values);
+    }
 
-    in(key, array) { return this.where(key, "in", array.join(",")); }
-    notIn(key, array) { return this.where(key, "not.in", array.join(",")); }
-
-    // ------------------------------------------------------------
-    // ORDER
-    // ------------------------------------------------------------
-    order(column, direction = "asc") {
-        this._order.push({ column, direction });
+    /**
+     * Ordering results.
+     * @param {string} column 
+     * @param {string} direction 'asc' or 'desc'
+     */
+    orderBy(column, direction = "asc") {
+        this._queryParams.append("order", `${column}.${direction}`);
         return this;
     }
 
-    // ------------------------------------------------------------
-    // LIMIT/OFFSET
-    // ------------------------------------------------------------
-    limit(n) {
-        this._limit = n;
+    /**
+     * Sets the limit of records.
+     * @param {number} limit 
+     */
+    limit(limit) {
+        this._queryParams.set("limit", limit);
         return this;
     }
 
-    offset(n) {
-        this._offset = n;
+    /**
+     * Sets the offset.
+     * @param {number} offset 
+     */
+    offset(offset) {
+        this._queryParams.set("offset", offset);
         return this;
     }
 
-    // ------------------------------------------------------------
-    // COUNT
-    // ------------------------------------------------------------
-    count() {
-        this._count = true;
+    /**
+     * Simplified pagination helper.
+     * @param {number} page Page number (starting at 1).
+     * @param {number} pageSize Records per page.
+     */
+    page(page, pageSize = 20) {
+        const offset = (page - 1) * pageSize;
+        this.limit(pageSize);
+        this.offset(offset);
         return this;
     }
 
-    // ------------------------------------------------------------
-    // BUILD URL + QUERY
-    // ------------------------------------------------------------
-    _buildUrl() {
-        const params = new URLSearchParams();
-
-        if (this._select) {
-            params.set("select", this._select);
-        }
-
-        for (const f of this._filters) {
-            const key = `${f.key}.${f.op}`;
-            params.set(key, f.value);
-        }
-
-        for (const o of this._order) {
-            params.append("order", `${o.column}.${o.direction}`);
-        }
-
-        if (this._limit !== null) params.set("limit", this._limit);
-        if (this._offset !== null) params.set("offset", this._offset);
-
-        if (this._count) params.set("count", "");
-
-        const qs = params.toString();
-        return `${this.baseUrl}/${this.table}${qs ? "?" + qs : ""}`;
+    /**
+     * Requests total record count in metadata.
+     */
+    withCount() {
+        this._queryParams.set("count", "true");
+        return this;
     }
 
-    // ------------------------------------------------------------
-    // EXECUTE
-    // ------------------------------------------------------------
-    async _exec() {
-        const url = this._buildUrl();
+    /**
+     * Executes the listing query (GET).
+     * @returns {Promise<{data: any[], count: number|null, error: any, status: number}>}
+     */
+    async get() {
+        const qs = this._queryParams.toString();
+        const url = `${this.endpoint}${qs ? "?" + qs : ""}`;
+        return this._request("GET", url);
+    }
 
+    // =========================================================================
+    // INTERNAL
+    // =========================================================================
+
+    /**
+     * Internal method to perform fetch.
+     */
+    async _request(method, url, body = null) {
         const options = {
-            method: this._method,
-            headers: this.headers
+            method,
+            headers: this.client.headers
         };
 
-        if (this._body !== null) {
-            options.body = JSON.stringify(this._body);
+        if (body) {
+            options.body = JSON.stringify(body);
         }
 
-        const response = await fetch(url, options);
-        const json = await response.json();
+        try {
+            const response = await fetch(url, options);
+            const isJson = response.headers.get("content-type")?.includes("application/json");
 
-        return {
-            status: response.status,
-            error: json.error || null,
-            data: json.data ?? null,
-            count: json.count ?? null
-        };
-    }
+            let payload = null;
+            if (isJson) {
+                payload = await response.json();
+            }
 
-    // ------------------------------------------------------------
-    // CLIENT-FACING METHODS
-    // ------------------------------------------------------------
-    async all() {
-        return await this._exec();
-    }
-
-    async single() {
-        const result = await this._exec();
-        if (result.error) return result;
-
-        if (!result.data || result.data.length !== 1) {
-            return {
-                ...result,
-                error: "Single record expected, got " + (result.data ? result.data.length : 0)
+            // Normalize response
+            const result = {
+                data: payload?.data ?? null,
+                count: payload?.count ?? null,
+                error: payload?.error ?? null,
+                status: response.status
             };
-        }
 
-        result.data = result.data[0];
-        return result;
-    }
+            if (!response.ok && !result.error) {
+                // Fallback for HTTP errors without standard JSON body
+                result.error = { message: response.statusText, code: response.status };
+            }
 
-    async maybeSingle() {
-        const result = await this._exec();
-        if (result.error) return result;
-
-        if (!result.data || result.data.length === 0) {
-            result.data = null;
             return result;
-        }
-
-        if (result.data.length > 1) {
+        } catch (err) {
+            // Network/Fetch errors
             return {
-                ...result,
-                error: "MaybeSingle expected 0 or 1 row, got " + result.data.length
+                data: null,
+                count: null,
+                error: err.message,
+                status: 0
             };
         }
-
-        result.data = result.data[0];
-        return result;
     }
 }
 
-// export { RubikREST };
+// Export for CommonJS or ES Modules environments
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = { RubikClient };
+} else {
+    window.RubikClient = RubikClient;
+}
