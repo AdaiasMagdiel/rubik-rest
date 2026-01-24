@@ -4,21 +4,26 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "06600ce3f3fe200b9ade7779b23757b2",
+    "content-hash": "748fc35a24ec8e429cab3da9517c68fe",
     "packages": [
         {
             "name": "adaiasmagdiel/erlenmeyer",
-            "version": "v4.1.2",
+            "version": "v5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AdaiasMagdiel/erlenmeyer.git",
-                "reference": "eb5914c7afdbf40ac340f85055f5d40eb1406de1"
+                "reference": "31141986506a02127f6ba1f95156787dbe5cf0b3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AdaiasMagdiel/erlenmeyer/zipball/eb5914c7afdbf40ac340f85055f5d40eb1406de1",
-                "reference": "eb5914c7afdbf40ac340f85055f5d40eb1406de1",
+                "url": "https://api.github.com/repos/AdaiasMagdiel/erlenmeyer/zipball/31141986506a02127f6ba1f95156787dbe5cf0b3",
+                "reference": "31141986506a02127f6ba1f95156787dbe5cf0b3",
                 "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": "^8.1"
             },
             "require-dev": {
                 "pestphp/pest": "^3.8"
@@ -42,22 +47,22 @@
             "description": "Erlenmeyer is a lightweight PHP framework designed to create web applications simply and efficiently.",
             "support": {
                 "issues": "https://github.com/AdaiasMagdiel/erlenmeyer/issues",
-                "source": "https://github.com/AdaiasMagdiel/erlenmeyer/tree/v4.1.2"
+                "source": "https://github.com/AdaiasMagdiel/erlenmeyer/tree/v5.0.0"
             },
-            "time": "2025-12-09T15:24:12+00:00"
+            "time": "2026-01-20T20:59:32+00:00"
         },
         {
             "name": "adaiasmagdiel/rubik",
-            "version": "v5.2.0",
+            "version": "v6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/AdaiasMagdiel/rubik-orm.git",
-                "reference": "a8d414d5c82a1523d3ebf24bb59131a191ec1091"
+                "reference": "e58aad7afdf8bafebc2755dc58cf7468d6d2a735"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/AdaiasMagdiel/rubik-orm/zipball/a8d414d5c82a1523d3ebf24bb59131a191ec1091",
-                "reference": "a8d414d5c82a1523d3ebf24bb59131a191ec1091",
+                "url": "https://api.github.com/repos/AdaiasMagdiel/rubik-orm/zipball/e58aad7afdf8bafebc2755dc58cf7468d6d2a735",
+                "reference": "e58aad7afdf8bafebc2755dc58cf7468d6d2a735",
                 "shasum": ""
             },
             "require": {
@@ -86,9 +91,9 @@
             "description": "A lightweight and intuitive ORM for PHP with support for SQLite and MySQL/MariaDB.",
             "support": {
                 "issues": "https://github.com/AdaiasMagdiel/rubik-orm/issues",
-                "source": "https://github.com/AdaiasMagdiel/rubik-orm/tree/v5.2.0"
+                "source": "https://github.com/AdaiasMagdiel/rubik-orm/tree/v6.0.0"
             },
-            "time": "2025-12-10T16:52:51+00:00"
+            "time": "2026-01-21T22:45:12+00:00"
         }
     ],
     "packages-dev": [],
