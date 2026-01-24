@@ -1,180 +1,156 @@
 # RubikREST
 
-RubikREST is a lightweight PostgREST-style REST layer built on top of the [**Erlenmeyer**](https://github.com/AdaiasMagdiel/erlenmeyer) HTTP framework and the [**Rubik ORM**](https://github.com/AdaiasMagdiel/rubik-orm).
-It exposes SQL tables as REST resources with filtering, ordering, pagination, joins, and insert operations, using a clean URL/parameter syntax compatible with PostgREST patterns.
+Rest interface for Rubik ORM designed for integrations with the Erlenmeyer framework.
 
-RubikREST is ideal when you need a simple, self-hosted, database-driven REST backend without the complexity of a full framework.
-
----
-
-## Features
-
-- Automatic REST exposure of any SQL table
-- GET with:
-  - filters (`col.eq`, `col.like`, `col.in`, etc.)
-  - logical groups (`and=()`, `or=()`)
-  - ordering
-  - joins
-  - pagination
-  - optional `count`
-- POST insert operations with PostgREST-compatible behavior
-- Strict table-name validation
-- Zero configuration beyond creating a Rubik connection
-- Erlenmeyer routing integration
-- Designed for clean server-side usage or JS client libraries
-
----
+RubikREST allows you to instantly expose your Rubik Models as a full-featured REST API with automatic routing, filtering, eager loading, and OpenAPI (Swagger) documentation. It includes a fluent JavaScript client for seamless frontend integration.
 
 ## Requirements
 
-- **PHP 8.1+**
-- **Erlenmeyer** (routing + Request/Response)
-- **Rubik ORM** (database abstraction)
+- PHP 8.1 or higher
+- adaiasmagdiel/erlenmeyer ^5.0
+- adaiasmagdiel/rubik ^6.0
 
 ## Installation
 
-RubikREST is available on Packagist:
+Install the package via Composer:
 
-```
+```bash
 composer require adaiasmagdiel/rubik-rest
 ```
 
----
+## Quick Start
 
-## Basic Usage
+### 1. Backend Setup
 
-A complete minimal example, using **SQLite**, **Erlenmeyer**, **Rubik ORM**, and a model (`Hero`) that creates its own table:
+In your Erlenmeyer bootstrap file (e.g., `index.php`):
 
 ```php
-<?php
-
 use AdaiasMagdiel\Erlenmeyer\App;
-use AdaiasMagdiel\Erlenmeyer\Request;
-use AdaiasMagdiel\Erlenmeyer\Response;
-use AdaiasMagdiel\Rubik\Enum\Driver;
-use AdaiasMagdiel\Rubik\Rubik;
 use AdaiasMagdiel\RubikREST\RubikREST;
-use App\Models\Hero;
+use App\Models\User;
+use App\Models\Post;
 
-require_once __DIR__ . '/vendor/autoload.php';
-
-// --- Rubik Connection
-define('DB_PATH', __DIR__ . '/database/data.db');
-Rubik::connect(Driver::SQLITE, path: DB_PATH);
-
-// Create model table (optional helper from your model)
-Hero::createTable(true);
-
-// --- Erlenmeyer App
 $app = new App();
 
-// Enable /api/rest/[table] REST API
-RubikREST::init($app);
+// Configure and register resources
+RubikREST::configure($app, '/api/v1')
+    ->resource('users', User::class)
+    ->resource('posts', Post::class, [AuthMiddleware::class]) // Protected route
+    ->enableDocs('/api-docs'); // Enable Swagger UI
 
-// Basic route example (optional)
-$app->get('/', function (Request $req, Response $res, stdClass $params) {
-    return $res->withHtml(file_get_contents(__DIR__ . '/public/index.html'));
-});
-
-// Start server
 $app->run();
 ```
 
-After booting the app, every database table becomes available as a REST resource:
+### 2. Security (Mass Assignment)
 
-```
-GET /api/rest/heroes
-GET /api/rest/heroes?alter_ego.like=Bruce*
-```
+By default, RubikREST operates in a permissive mode to allow rapid prototyping. For production environments, **you must define the `$fillable` property in your Rubik Models**.
 
----
+If `$fillable` is defined, the API will strictly filter input data (POST/PATCH) to only allow the specified columns.
 
-## GET Examples
+```php
+namespace App\Models;
 
-### Basic Select
+use AdaiasMagdiel\Rubik\Model;
 
-```
-GET /api/rest/users
-```
-
-### Filtering
-
-```
-GET /api/rest/users?name.like=*john*
-GET /api/rest/users?age.gt=30
-GET /api/rest/users?status.eq=active
-```
-
-### IN / NOT IN
-
-```
-GET /api/rest/products?id.in=(10,11,12)
-GET /api/rest/products?id.notin=(1,2,3)
-```
-
-### AND / OR groups
-
-```
-GET /api/rest/users?and=(age.gte.18,status.eq.active)
-GET /api/rest/users?or=(type.eq.admin,type.eq.manager)
-```
-
-### Ordering / Pagination
-
-```
-GET /api/rest/users?order=name.asc&limit=10&offset=20
-```
-
-### Joining
-
-```
-GET /api/rest/orders?join=customers:orders.customer_id=customers.id
-```
-
-### Counting
-
-```
-GET /api/rest/users?count
-```
-
----
-
-## POST Example
-
-### Insert one row
-
-```
-POST /api/rest/users
-Content-Type: application/json
-
+class User extends Model
 {
-  "name": "John Doe",
-  "email": "john@example.com"
+    // Only these fields can be created or updated via the API
+    public static array $fillable = ['name', 'email', 'bio'];
 }
 ```
 
-### Insert multiple rows
+## JavaScript Client
 
+This package includes `RubikREST.js`, a zero-dependency, fluent client for consuming the API.
+
+```javascript
+import { RubikClient } from "./path/to/RubikREST.js";
+
+const client = new RubikClient("https://api.example.com/v1");
+
+// 1. Fetching data (List)
+const { data, count, error } = await client
+  .from("users")
+  .select("id,name,email")
+  .with("posts") // Eager load relationships
+  .eq("role", "admin")
+  .orderBy("created_at", "desc")
+  .page(1, 20)
+  .get();
+
+// 2. Fetch single
+const user = await client.from("users").find(1);
+
+// 3. Create
+await client
+  .from("users")
+  .create({ name: "John Doe", email: "john@example.com" });
+
+// 4. Update
+await client.from("users").update(1, { name: "Jane Doe" });
+
+// 5. Delete
+await client.from("users").delete(1);
 ```
-POST /api/rest/users?count
-[
-  { "name": "A" },
-  { "name": "B" }
-]
-```
 
----
+## API Features & Query Parameters
 
-## Security Notes
+The API supports a rich set of query parameters for the `GET /resource` endpoint.
 
-- Table names are strictly validated (`^[a-zA-Z0-9_]+$`).
-- No dynamic SQL injection points.
-- Operators are whitelisted and normalized.
+### Selection & Eager Loading
 
----
+- **select**: Comma-separated list of columns to return.
+  - `GET /users?select=id,name`
+- **with**: Comma-separated list of relationships to eager load (prevents N+1 problems).
+  - `GET /users?with=posts,profile`
+
+### Pagination & Sorting
+
+- **limit**: Number of records to return.
+- **offset**: Number of records to skip.
+- **order**: Format `column.direction`.
+  - `GET /users?order=age.desc,name.asc`
+
+### Filtering
+
+Filters follow the format `column.operator=value`.
+
+| Operator  | URL Example          | SQL Equivalent                          |
+| :-------- | :------------------- | :-------------------------------------- |
+| **eq**    | `status.eq=active`   | `status = 'active'`                     |
+| **neq**   | `status.neq=banned`  | `status <> 'banned'`                    |
+| **gt**    | `age.gt=18`          | `age > 18`                              |
+| **gte**   | `age.gte=18`         | `age >= 18`                             |
+| **lt**    | `price.lt=100`       | `price < 100`                           |
+| **lte**   | `price.lte=100`      | `price <= 100`                          |
+| **like**  | `name.like=John*`    | `name LIKE 'John%'`                     |
+| **ilike** | `name.ilike=john*`   | `name ILIKE 'john%'` (Case insensitive) |
+| **in**    | `id.in=1,2,3`        | `id IN (1, 2, 3)`                       |
+| **is**    | `deleted_at.is=null` | `deleted_at IS NULL`                    |
+
+## Documentation (Swagger/OpenAPI)
+
+If enabled via `enableDocs('/docs')`, RubikREST automatically inspects your Rubik Models using reflection to generate an OpenAPI 3.0 specification.
+
+- **UI:** Access `/docs` to see the interactive Swagger UI.
+- **JSON:** Access `/docs/openapi.json` to get the raw specification.
+
+The documentation respects the `$fillable` property, marking non-fillable fields as `readOnly`.
+
+## Error Handling
+
+The API returns semantic HTTP status codes:
+
+- **200 OK**: Successful read/update.
+- **201 Created**: Successful creation.
+- **204 No Content**: Successful deletion.
+- **400 Bad Request**: Invalid JSON or invalid query parameter (e.g., requesting a non-existent column).
+- **404 Not Found**: Resource ID not found.
+- **409 Conflict**: Integrity constraint violation (e.g., duplicate unique entry).
+- **500 Internal Server Error**: General application error.
+
+**Note:** In production (when `APP_DEBUG` is not `true`), detailed database error messages are hidden from the client to prevent information disclosure.
 
 ## License
 
-RubikREST is released under the **GNU General Public License v3.0**.
-
-See `LICENSE` for details.
+RubikREST is licensed under the GPLv3. See the [LICENSE](LICENSE) and the [COPYRIGHT](COPYRIGHT) files for details.
