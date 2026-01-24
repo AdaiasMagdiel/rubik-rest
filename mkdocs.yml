@@ -1,0 +1,53 @@
+site_name: RubikREST
+site_url: https://adaiasmagdiel.github.io/rubik-rest
+site_description: Automatic REST interface for Rubik ORM and Erlenmeyer.
+site_author: Adaías Magdiel
+repo_url: https://github.com/AdaiasMagdiel/rubik-rest
+repo_name: AdaiasMagdiel/rubik-rest
+
+theme:
+  name: material
+  language: en
+  palette:
+    # Light Mode
+    - scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Dark Mode
+    - scheme: slate
+      primary: teal
+      accent: lime
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.highlight
+    - search.share
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting Started: quickstart.md
+  - API Features: api-features.md
+  - JavaScript Client: js-client.md
+  - Security: security.md
