@@ -16,3 +16,7 @@
 
 # Legal and changelog
 /CHANGELOG.md                 export-ignore
+
+# Build tools (Node.js)
+/package.json                 export-ignore
+/package-lock.json            export-ignore

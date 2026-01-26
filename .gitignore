@@ -1,4 +1,6 @@
 vendor/
 .venv/
+node_modules/
+site/
 
 *.bat
