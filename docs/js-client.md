@@ -87,3 +87,21 @@ api
   .in("status", ["instock", "preorder"])
   .get();
 ```
+
+## Production vs Development
+
+RubikREST ships with two versions of the client:
+
+1. `RubikREST.js` - Full source code, documented via JSDoc. Ideal for development and debugging.
+2. `RubikREST.min.js` - Minified (< 2KB), optimized for production. Includes source maps support.
+
+### Using via CDN (Example)
+
+If you host the file yourself:
+
+```html
+<script src="/js/RubikREST.min.js"></script>
+<script>
+  const api = new RubikClient("https://api.mysite.com");
+</script>
+```

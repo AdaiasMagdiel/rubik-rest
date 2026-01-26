@@ -4,7 +4,7 @@ See how to configure your REST API in minutes.
 
 ## 1. Configuring the Application
 
-In your application entry file (where you instantiate the Erlenmeyer `App`), configure RubikREST.
+In your application entry file (where you instantiate the Erlenmeyer `App`), configure **RubikREST**.
 
 ```php
 <?php
@@ -20,7 +20,7 @@ $app = new App();
 // 1. Start configuration (default prefix: /api)
 RubikREST::configure($app, '/api')
 
-    // 2. Register Resources
+    // 2. Register resources
     ->resource('users', User::class)
     ->resource('products', Product::class)
 
@@ -28,6 +28,27 @@ RubikREST::configure($app, '/api')
     ->enableDocs('/docs');
 
 $app->run();
+```
+
+!!! info "Development with PHP Built-in Server"
+If you are running the application using PHP’s built-in server (`php -S`), it is recommended to explicitly define the second parameter of `enableDocs`.
+
+```
+This prevents the server from interpreting the JSON specification route as a non-existent static file, which would otherwise result in 404 errors when rendering the Swagger UI.
+```
+
+```php
+// ...
+
+RubikREST::configure($app, '/api')
+
+    // 2. Register resources
+    ->resource('users', User::class)
+    ->resource('products', Product::class)
+
+    // 3. (Optional) Enable Swagger UI at /docs
+    ->enableDocs('/docs', 'openapi'); // without ".json" to prevent the server from looking for a real file
+
 ```
 
 ## 2. Creating the Model
