@@ -56,3 +56,21 @@ In `like` and `ilike` filters, use the asterisk `*` in the URL to represent SQLâ
 To retrieve the total number of records (useful for frontend pagination), add `count` to the query. The result will be returned in the `count` key of the JSON response.
 
 `GET /api/users?limit=5&count`
+
+## Custom Error Responses
+
+You can control the HTTP status code returned by the API simply by throwing exceptions with the desired code in your Rubik Models hooks (e.g., `beforeSave`, `beforeDelete`).
+
+**Example: preventing deletion of a specific record**
+
+```php
+// In your User Model
+public function beforeDelete(): bool
+{
+    if ($this->id === 1) {
+        // This will result in a 403 Forbidden response
+        throw new \Exception("Cannot delete the root admin.", 403);
+    }
+    return true;
+}
+```
