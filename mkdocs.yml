@@ -46,8 +46,13 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Installation: installation.md
-  - Getting Started: quickstart.md
-  - API Features: api-features.md
-  - JavaScript Client: js-client.md
-  - Security: security.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+  - Core Concepts:
+      - API Features: core-concepts/api-features.md
+      - Security: core-concepts/security.md
+  - Client Libraries:
+      - JavaScript Client: client-libraries/js-client.md
+  - Advanced:
+      - Cookbook & Recipes: advanced/cookbook.md
