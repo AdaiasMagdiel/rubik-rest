@@ -56,10 +56,10 @@ class RubikREST
      * @param string $path The URL path where documentation will be served (default: '/docs').
      * @return static
      */
-    public static function enableDocs(string $path = '/docs'): static
+    public static function enableDocs(string $path = '/api/docs', string $specFilename = 'openapi.json'): static
     {
         $path = '/' . ltrim($path, '/');
-        $jsonPath = $path . '/openapi.json';
+        $jsonPath = $path . "/$specFilename";
 
         self::$app->get($jsonPath, function (Request $req, Response $res) {
             $spec = self::getOpenApiSpec();
