@@ -60,21 +60,39 @@ class RubikResource {
     }
 
     /**
-     * Updates an existing record by ID.
-     * PATCH /resource/{id}
-     * @param {string|number} id
-     * @param {object} data JSON object with data to update.
+     * Updates records.
+     * Usage 1 (By ID): .update(1, {name: 'New'}) -> PATCH /resource/1
+     * Usage 2 (Bulk):  .where('status', 'old').update({status: 'new'}) -> PATCH /resource?status=old
+     * 
+     * @param {string|number|object} idOrData ID or Data object (if bulk).
+     * @param {object|null} data Data object (if ID is provided).
      */
-    async update(id, data) {
-        return this._request("PATCH", `${this.endpoint}/${id}`, data);
+    async update(idOrData, data = null) {
+        // Bulk Update (No ID passed, first arg is data)
+        if (typeof idOrData === 'object' && idOrData !== null && data === null) {
+            const qs = this._queryParams.toString();
+            const url = `${this.endpoint}${qs ? "?" + qs : ""}`;
+            return this._request("PATCH", url, idOrData);
+        }
+        // Single Update (ID passed)
+        return this._request("PATCH", `${this.endpoint}/${idOrData}`, data);
     }
 
     /**
-     * Deletes a record by ID.
-     * DELETE /resource/{id}
-     * @param {string|number} id
+     * Deletes records.
+     * Usage 1 (By ID): .delete(1) -> DELETE /resource/1
+     * Usage 2 (Bulk):  .where('status', 'banned').delete() -> DELETE /resource?status=banned
+     * 
+     * @param {string|number|null} id ID (optional).
      */
-    async delete(id) {
+    async delete(id = null) {
+        // Bulk Delete
+        if (id === null) {
+            const qs = this._queryParams.toString();
+            const url = `${this.endpoint}${qs ? "?" + qs : ""}`;
+            return this._request("DELETE", url);
+        }
+        // Single Delete
         return this._request("DELETE", `${this.endpoint}/${id}`);
     }
 
@@ -204,39 +222,35 @@ class RubikResource {
             method,
             headers: this.client.headers
         };
-
         if (body) {
             options.body = JSON.stringify(body);
         }
-
         try {
             const response = await fetch(url, options);
             const isJson = response.headers.get("content-type")?.includes("application/json");
-
             let payload = null;
             if (isJson) {
                 payload = await response.json();
             }
-
             // Normalize response
             const result = {
                 data: payload?.data ?? null,
                 count: payload?.count ?? null,
+                affected: payload?.affected ?? null, // Added for batch ops
                 error: payload?.error ?? null,
                 status: response.status
             };
-
             if (!response.ok && !result.error) {
                 // Fallback for HTTP errors without standard JSON body
                 result.error = { message: response.statusText, code: response.status };
             }
-
             return result;
         } catch (err) {
             // Network/Fetch errors
             return {
                 data: null,
                 count: null,
+                affected: null,
                 error: err.message,
                 status: 0
             };
