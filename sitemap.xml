@@ -5,23 +5,27 @@
          <lastmod>2026-01-26</lastmod>
     </url>
     <url>
-         <loc>https://adaiasmagdiel.github.io/rubik-rest/api-features/</loc>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/advanced/cookbook/</loc>
          <lastmod>2026-01-26</lastmod>
     </url>
     <url>
-         <loc>https://adaiasmagdiel.github.io/rubik-rest/installation/</loc>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/client-libraries/js-client/</loc>
          <lastmod>2026-01-26</lastmod>
     </url>
     <url>
-         <loc>https://adaiasmagdiel.github.io/rubik-rest/js-client/</loc>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/core-concepts/api-features/</loc>
          <lastmod>2026-01-26</lastmod>
     </url>
     <url>
-         <loc>https://adaiasmagdiel.github.io/rubik-rest/quickstart/</loc>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/core-concepts/security/</loc>
          <lastmod>2026-01-26</lastmod>
     </url>
     <url>
-         <loc>https://adaiasmagdiel.github.io/rubik-rest/security/</loc>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/getting-started/installation/</loc>
+         <lastmod>2026-01-26</lastmod>
+    </url>
+    <url>
+         <loc>https://adaiasmagdiel.github.io/rubik-rest/getting-started/quickstart/</loc>
          <lastmod>2026-01-26</lastmod>
     </url>
 </urlset>
