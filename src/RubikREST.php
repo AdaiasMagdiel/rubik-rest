@@ -8,6 +8,7 @@ use AdaiasMagdiel\Erlenmeyer\Response;
 use AdaiasMagdiel\Rubik\Model;
 use AdaiasMagdiel\Rubik\Enum\Field;
 use Exception;
+use InvalidArgumentException;
 use stdClass;
 
 class RubikREST
@@ -53,19 +54,33 @@ class RubikREST
     /**
      * Enables automatic API documentation via Swagger UI.
      *
-     * @param string $path The URL path where documentation will be served (default: '/docs').
+     * @param string $path The base URL path for the documentation UI (default: '/api/docs').
+     * @param string $specFilename The custom route name for the OpenAPI specification (default: 'openapi.json').
+     * @throws InvalidArgumentException If the path or filename contains invalid characters.
      * @return static
      */
     public static function enableDocs(string $path = '/api/docs', string $specFilename = 'openapi.json'): static
     {
-        $path = '/' . ltrim($path, '/');
-        $jsonPath = $path . "/$specFilename";
+        // Basic URL safety check: alphanumeric, slashes, underscores, hyphens, and dots.
+        if (!preg_match('/^[a-zA-Z0-9\/\-_.]+$/', $path)) {
+            throw new InvalidArgumentException("Invalid characters in documentation path: $path");
+        }
 
+        if (!preg_match('/^[a-zA-Z0-9\-_.]+$/', $specFilename)) {
+            throw new InvalidArgumentException("Invalid characters in specification filename: $specFilename");
+        }
+
+        $path = '/' . ltrim($path, '/');
+        // Ensure no double slashes when joining path and filename
+        $jsonPath = rtrim($path, '/') . '/' . ltrim($specFilename, '/');
+
+        // Serve the OpenAPI specification (Dynamically generated)
         self::$app->get($jsonPath, function (Request $req, Response $res) {
             $spec = self::getOpenApiSpec();
             return $res->withJson($spec);
         });
 
+        // Serve the Swagger UI HTML
         self::$app->get($path, function (Request $req, Response $res) use ($jsonPath) {
             $html = self::getSwaggerHTML($jsonPath);
             return $res->withHtml($html);
