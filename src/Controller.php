@@ -12,12 +12,10 @@ use Throwable;
 class Controller
 {
     private string $modelClass;
-
     public function __construct(string $modelClass)
     {
         $this->modelClass = $modelClass;
     }
-
     /**
      * Filters input data based on the Model's $fillable property.
      * Provides security against Mass Assignment vulnerabilities.
@@ -35,12 +33,10 @@ class Controller
                 return array_intersect_key($data, array_flip($allowed));
             }
         }
-
         // PERMISSIVE MODE: If $fillable is not defined, allow everything.
         // In production, it is highly recommended to use $fillable in your Models.
         return $data;
     }
-
     /**
      * Translates backend exceptions into semantic HTTP responses.
      */
@@ -49,14 +45,12 @@ class Controller
         // 1. Handle Database Specific Errors
         if ($e instanceof PDOException) {
             $code = (string)$e->getCode(); // SQLState
-
             // 23000: Integrity constraint violation (Duplicate entry, Foreign key missing)
             if ($code === '23000') {
                 return $res->setStatusCode(409)->withJson([
                     'error' => 'Conflict: Integrity constraint violation (e.g., duplicate entry or invalid reference).'
                 ]);
             }
-
             // 42S22: Column not found (User requested invalid filter/order/select)
             if ($code === '42S22') {
                 return $res->setStatusCode(400)->withJson([
@@ -64,25 +58,19 @@ class Controller
                 ]);
             }
         }
-
         // 2. Default / Server Errors
         $isDebug = ($_ENV['APP_DEBUG'] ?? $_ENV['DEBUG'] ?? 'false') === 'true';
-
         // Log the real error internally regardless of environment
         // error_log($e->getMessage()); 
-
         $message = $isDebug ? $e->getMessage() : 'Internal Server Error';
-
         // If the exception carries a valid HTTP code (e.g. LogicException with code 403), use it
         $status = ($e->getCode() >= 400 && $e->getCode() < 600) ? $e->getCode() : 500;
-
         return $res->setStatusCode((int)$status)->withJson([
             'data' => null,
             'count' => null,
             'error' => $message
         ]);
     }
-
     /**
      * GET /resource
      * Handles listing with filtering, sorting, pagination, field selection, and eager loading.
@@ -93,21 +81,18 @@ class Controller
             /** @var Query $query */
             $query = $this->modelClass::query();
             $params = $req->getQueryParams();
-
             // 1. SELECT (Fields)
             if (isset($params['select']) && !empty($params['select'])) {
                 $cols = explode(',', $params['select']);
                 $query->select(array_map('trim', $cols));
                 unset($params['select']);
             }
-
             // 2. EAGER LOADING (With) - NEW FEATURE
             if (isset($params['with']) && !empty($params['with'])) {
                 $relations = explode(',', $params['with']);
                 $query->with(array_map('trim', $relations));
                 unset($params['with']);
             }
-
             // 3. ORDER BY
             if (isset($params['order']) && !empty($params['order'])) {
                 // Expected format: ?order=col1.asc,col2.desc
@@ -122,11 +107,9 @@ class Controller
                 }
                 unset($params['order']);
             }
-
             // 4. LIMIT & OFFSET
             $limit = isset($params['limit']) ? (int)$params['limit'] : null;
             $offset = isset($params['offset']) ? (int)$params['offset'] : null;
-
             if ($limit !== null) {
                 $query->limit($limit);
                 unset($params['limit']);
@@ -135,16 +118,13 @@ class Controller
                 $query->offset($offset);
                 unset($params['offset']);
             }
-
             // 5. COUNT REQUEST
             $countRequested = isset($params['count']);
             if ($countRequested) {
                 unset($params['count']);
             }
-
             // 6. FILTERS (Where clauses)
             $this->applyFilters($query, $params);
-
             // Execute Count if requested (requires a separate query)
             $total = null;
             if ($countRequested) {
@@ -152,9 +132,7 @@ class Controller
                 $this->applyFilters($countQuery, $params);
                 $total = $countQuery->count();
             }
-
             $data = $query->all();
-
             return $res->withJson([
                 'data' => $data,
                 'count' => $total,
@@ -164,7 +142,6 @@ class Controller
             return $this->handleException($e, $res);
         }
     }
-
     /**
      * GET /resource/[id]
      * Fetch a single resource by ID.
@@ -173,14 +150,11 @@ class Controller
     {
         /** @var Model|null $model */
         $model = $this->modelClass::find($id);
-
         if (!$model) {
             return $res->setStatusCode(404)->withJson(['error' => 'Resource not found']);
         }
-
         return $res->withJson(['data' => $model->toArray()]);
     }
-
     /**
      * POST /resource
      * Create a new resource.
@@ -189,26 +163,20 @@ class Controller
     {
         $data = $req->getJson();
         if (!$data) return $res->setStatusCode(400)->withJson(['error' => "Invalid JSON"]);
-
         try {
             /** @var Model $model */
             $model = new $this->modelClass();
-
             // APPLY SECURITY FILTER
             $cleanData = $this->filterData($data);
-
             $model->hydrate($cleanData);
-
             if ($model->save()) {
                 return $res->setStatusCode(201)->withJson(['data' => $model->toArray()]);
             }
-
             return $res->setStatusCode(500)->withJson(['error' => "Failed to create resource"]);
         } catch (Throwable $e) {
             return $this->handleException($e, $res);
         }
     }
-
     /**
      * PATCH /resource/[id]
      * Update an existing resource.
@@ -219,25 +187,58 @@ class Controller
             /** @var Model|null $model */
             $model = $this->modelClass::find($id);
             if (!$model) return $res->setStatusCode(404)->withJson(['error' => "Not Found"]);
-
             $data = $req->getJson();
             if (!$data) return $res->setStatusCode(400)->withJson(['error' => "Invalid JSON body"]);
-
             // APPLY SECURITY FILTER
             $cleanData = $this->filterData($data);
-
             $model->hydrate($cleanData);
-
             if ($model->save()) {
                 return $res->withJson(['data' => $model->toArray()]);
             }
-
             return $res->setStatusCode(500)->withJson(['error' => "Update failed"]);
         } catch (Throwable $e) {
             return $this->handleException($e, $res);
         }
     }
+    /**
+     * PATCH /resource
+     * Bulk update resources based on filters.
+     */
+    public function updateBatch(Request $req, Response $res)
+    {
+        try {
+            $data = $req->getJson();
+            if (!$data) return $res->setStatusCode(400)->withJson(['error' => "Invalid JSON body"]);
 
+            // Clean data
+            $cleanData = $this->filterData($data);
+            if (empty($cleanData)) {
+                return $res->setStatusCode(400)->withJson(['error' => "No valid fields to update"]);
+            }
+
+            /** @var Query $query */
+            $query = $this->modelClass::query();
+            $params = $req->getQueryParams();
+
+            // Apply Filters
+            $this->applyFilters($query, $params);
+
+            // WORKAROUND: As Rubik only returns bool for update,
+            // we calculate the matching rows first.
+            $matchedCount = $query->count();
+
+            if ($matchedCount > 0) {
+                $query->update($cleanData);
+            }
+
+            return $res->withJson([
+                'affected' => $matchedCount,
+                'message' => "Updated matching records"
+            ]);
+        } catch (Throwable $e) {
+            return $this->handleException($e, $res);
+        }
+    }
     /**
      * DELETE /resource/[id]
      * Delete a resource.
@@ -248,17 +249,44 @@ class Controller
             /** @var Model|null $model */
             $model = $this->modelClass::find($id);
             if (!$model) return $res->setStatusCode(404)->withJson(['error' => "Not Found"]);
-
             if ($model->delete()) {
                 return $res->setStatusCode(204)->send();
             }
-
             return $res->setStatusCode(500)->withJson(['error' => "Delete failed"]);
         } catch (Throwable $e) {
             return $this->handleException($e, $res);
         }
     }
+    /**
+     * DELETE /resource
+     * Bulk delete resources based on filters.
+     */
+    public function destroyBatch(Request $req, Response $res)
+    {
+        try {
+            /** @var Query $query */
+            $query = $this->modelClass::query();
+            $params = $req->getQueryParams();
 
+            // Apply Filters
+            $this->applyFilters($query, $params);
+
+            // WORKAROUND: As Rubik only returns bool for delete,
+            // we calculate the matching rows first.
+            $matchedCount = $query->count();
+
+            if ($matchedCount > 0) {
+                $query->delete();
+            }
+
+            return $res->withJson([
+                'affected' => $matchedCount,
+                'message' => "Deleted matching records"
+            ]);
+        } catch (Throwable $e) {
+            return $this->handleException($e, $res);
+        }
+    }
     /**
      * Helper to map URL parameters (key.op=val) to Rubik Query methods.
      */
@@ -268,7 +296,6 @@ class Controller
             if (str_contains($key, '.')) {
                 [$col, $op] = explode('.', $key, 2);
                 $op = strtolower($op);
-
                 switch ($op) {
                     case 'eq':
                         $query->where($col, '=', $value);
