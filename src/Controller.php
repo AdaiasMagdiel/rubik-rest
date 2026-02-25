@@ -166,12 +166,17 @@ class Controller
         try {
             /** @var Model $model */
             $model = new $this->modelClass();
+
             // APPLY SECURITY FILTER
             $cleanData = $this->filterData($data);
-            $model->hydrate($cleanData);
+            foreach ($cleanData as $key => $value) {
+                $model->$key = $value;
+            }
+
             if ($model->save()) {
                 return $res->setStatusCode(201)->withJson(['data' => $model->toArray()]);
             }
+
             return $res->setStatusCode(500)->withJson(['error' => "Failed to create resource"]);
         } catch (Throwable $e) {
             return $this->handleException($e, $res);
@@ -187,14 +192,20 @@ class Controller
             /** @var Model|null $model */
             $model = $this->modelClass::find($id);
             if (!$model) return $res->setStatusCode(404)->withJson(['error' => "Not Found"]);
+
             $data = $req->getJson();
             if (!$data) return $res->setStatusCode(400)->withJson(['error' => "Invalid JSON body"]);
+
             // APPLY SECURITY FILTER
             $cleanData = $this->filterData($data);
-            $model->hydrate($cleanData);
+            foreach ($cleanData as $key => $value) {
+                $model->$key = $value;
+            }
+
             if ($model->save()) {
                 return $res->withJson(['data' => $model->toArray()]);
             }
+
             return $res->setStatusCode(500)->withJson(['error' => "Update failed"]);
         } catch (Throwable $e) {
             return $this->handleException($e, $res);
